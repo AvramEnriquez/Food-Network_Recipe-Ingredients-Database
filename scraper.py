@@ -2,7 +2,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
-url = "https://www.foodnetwork.com/recipes/food-network-kitchen/rainbow-brioche-8532473"
+url = "https://www.foodnetwork.com/recipes/rabbit-stroganoff-recipe-1915633"
 
 def scraper(url):
     # Request HTML for URL then parse it
@@ -27,19 +27,38 @@ measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' m
 ' gallons ',' g ',' gal ',' gals ',' mg ',' milligram ',' milligrams ',' milligramme ',
 ' milligrammes ',' g ',' gs ',' gram ',' grams ',' gramme ',' grammes ',' kg ',' kgs ',
 ' kilogram ',' kilograms ',' kilogramme ',' kilogrammes ',' pound ',' pounds ',' lb ',' lbs ',
-' # ',' ounce ',' ounces ',' oz ', 'stick', 'sticks'])
+' # ',' ounce ',' ounces ',' oz ', ' stick ', ' sticks ', ' clove ', ' cloves '])
+
+numdict = {
+    "One" : 1,
+    "Two" : 2,
+    "Three" : 3,
+    "Four" : 4,
+    "Five" : 5,
+    "Six" : 6,
+    "Seven" : 7,
+    "Eight" : 8,
+    "Nine" : 9,
+    "Ten" : 10,
+}
 
 for item in ingredients_quantity:
+    for key, value in numdict.items():
+        if key in item:
+            item = item.replace(key, str(value))
     if any(char.isdigit() for char in item):
         if any(unit in item for unit in measurements):
             for unit in measurements:
                 if unit in item:
-                    list = item.split(unit)
+                    list = item.split(unit, 1)
                     list[0] += unit
         else:
+            # Search for integer in the item
             num = (re.search(r'\d+', item).group())
-            list = item.split(num)
+            list = item.split(num, 1)
             list[0] += num
+        list = [s.replace('\xa0', ' ') for s in list]
+        list = [s.strip() for s in list]
         print(list)
     else:
         list = ['', item]
