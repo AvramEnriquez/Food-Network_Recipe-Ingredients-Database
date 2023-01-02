@@ -2,7 +2,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
-url = "https://www.foodnetwork.com/recipes/haggis-recipe-2126047"
+url = "https://www.foodnetwork.com/recipes/ree-drummond/halloween-dirt-cups-9422040"
 
 def scraper(url):
     # Request HTML for URL then parse it
@@ -32,12 +32,17 @@ measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' m
 ' # ',' ounce ',' ounces ',' oz '])
 
 for item in ingredients_quantity:
-    # If int exists in string then pull int
     if any(char.isdigit() for char in item):
-        for unit in measurements:
-            if unit in item:
-                quantity = (re.search(r'\d+', item).group()) + unit
-                print(quantity)
+        if any(unit in item for unit in measurements):
+            for unit in measurements:
+                if unit in item:
+                    list = item.split(unit)
+                    list[0] += unit
+        else:
+            num = (re.search(r'\d+', item).group())
+            list = item.split(num)
+            list[0] += num
+        print(list)
     else:
-        # Else put 0
-        print(0)
+        list = ['', item]
+        print(list)
