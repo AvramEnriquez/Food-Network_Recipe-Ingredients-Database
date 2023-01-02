@@ -19,8 +19,6 @@ def scraper(url):
 
 ingredients_quantity = scraper(url)
 
-print(ingredients_quantity)
-
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
 ' tablespoon ',' tablespoons ',' T ',' tbl ',' tbs ',' tbsp ',' fluid ounce ',' fluid ounces ',
