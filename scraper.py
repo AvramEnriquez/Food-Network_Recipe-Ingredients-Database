@@ -3,14 +3,17 @@ from bs4 import BeautifulSoup
 
 url = "https://www.foodnetwork.com/recipes/tyler-florence/fajitas-recipe-1906480"
 
-result = requests.get(url)
-soup = BeautifulSoup(result.text, "html.parser")
+def scraper(url):
+    # Request HTML for URL then parse it
+    result = requests.get(url)
+    soup = BeautifulSoup(result.text, "html.parser")
+    
+    # Look for Food Network's ingredients checkbox by looking for inputs that contain the following conditions 
+    shopping_list = soup.find_all("input", {"class" : "o-Ingredients__a-Ingredient--Checkbox"}, {"type" : "checkbox"})
 
-ingredients = soup.find(type = "application/ld+json")
+    ingredients = []
+    ingredients = [item["value"] for item in shopping_list[1:]]  # Item "value" contains ingredient + quantity
 
-target = ingredients.text
-start = target.find("recipeIngredient\":") + len("recipeIngredient\":[\"")
-end = target.find("\"],\"nutrition")
+    return ingredients
 
-list = target[start:end].split('","')
-print(list)
+print(scraper(url))
