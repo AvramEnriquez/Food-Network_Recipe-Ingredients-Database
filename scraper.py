@@ -2,7 +2,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
-url = "https://www.foodnetwork.com/recipes/ree-drummond/halloween-dirt-cups-9422040"
+url = "https://www.foodnetwork.com/recipes/food-network-kitchen/rainbow-brioche-8532473"
 
 def scraper(url):
     # Request HTML for URL then parse it
@@ -27,7 +27,7 @@ measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' m
 ' gallons ',' g ',' gal ',' gals ',' mg ',' milligram ',' milligrams ',' milligramme ',
 ' milligrammes ',' g ',' gs ',' gram ',' grams ',' gramme ',' grammes ',' kg ',' kgs ',
 ' kilogram ',' kilograms ',' kilogramme ',' kilogrammes ',' pound ',' pounds ',' lb ',' lbs ',
-' # ',' ounce ',' ounces ',' oz '])
+' # ',' ounce ',' ounces ',' oz ', 'stick', 'sticks'])
 
 for item in ingredients_quantity:
     if any(char.isdigit() for char in item):
