@@ -1,23 +1,9 @@
 import requests
 import re
+import unicodedata
 from bs4 import BeautifulSoup
 
-url = "https://www.foodnetwork.com/recipes/rabbit-stroganoff-recipe-1915633"
-
-def scraper(url):
-    # Request HTML for URL then parse it
-    result = requests.get(url)
-    soup = BeautifulSoup(result.text, "html.parser")
-    
-    # Look for Food Network's ingredients checklist by looking for inputs that contain the following conditions 
-    shopping_list = soup.find_all("input", {"class" : "o-Ingredients__a-Ingredient--Checkbox"}, {"type" : "checkbox"})
-
-    # Item "value" contains ingredient + quantity
-    ingredients_quantity = [item["value"] for item in shopping_list[1:]]
-
-    return ingredients_quantity
-
-ingredients_quantity = scraper(url)
+url = "https://www.foodnetwork.com/recipes/rack-of-lamb-with-herb-crust-lamb-jus-and-rice-pilaf-5513373"
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -28,7 +14,6 @@ measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' m
 ' milligrammes ',' g ',' gs ',' gram ',' grams ',' gramme ',' grammes ',' kg ',' kgs ',
 ' kilogram ',' kilograms ',' kilogramme ',' kilogrammes ',' pound ',' pounds ',' lb ',' lbs ',
 ' # ',' ounce ',' ounces ',' oz ', ' stick ', ' sticks ', ' clove ', ' cloves '])
-
 numdict = {
     "One" : 1,
     "Two" : 2,
@@ -42,24 +27,52 @@ numdict = {
     "Ten" : 10,
 }
 
-for item in ingredients_quantity:
-    for key, value in numdict.items():
-        if key in item:
-            item = item.replace(key, str(value))
-    if any(char.isdigit() for char in item):
-        if any(unit in item for unit in measurements):
-            for unit in measurements:
-                if unit in item:
-                    list = item.split(unit, 1)
-                    list[0] += unit
+def scraper(url):
+    # Request HTML for URL then parse it
+    result = requests.get(url)
+    soup = BeautifulSoup(result.text, "html.parser")
+    
+    # Look for Food Network's ingredients checklist by looking for inputs that contain the following conditions 
+    shopping_list = soup.find_all("input", {"class" : "o-Ingredients__a-Ingredient--Checkbox"}, {"type" : "checkbox"})
+
+    # Item "value" contains ingredient + quantity
+    scraped_ingred_quant = [item["value"] for item in shopping_list[1:]]
+
+    return scraped_ingred_quant
+
+def cleanup(scraped_ingred_quant):
+    ingredient_list = []
+    for item in scraped_ingred_quant:
+        # Cleanup HTML encoding '\xa0'
+        item = unicodedata.normalize('NFKD', item)
+        # 'One' -> '1', 'Two' -> '2', 'Three' -> '3'
+        for key, value in numdict.items():
+            if key in item:
+                item = item.replace(key, str(value))
+        # If string contains a digit
+        if any(char.isdigit() for char in item):
+            # and if string contains a unit of measurement
+            if any(unit in item for unit in measurements):
+                # then split accordingly
+                for unit in measurements:
+                    if unit in item:
+                        list = item.split(unit, 1)
+                        list.insert(1, unit)
+            else:
+                # Else search for the first digit in the item
+                # and split accordingly
+                num = (re.search(r'\d+', item).group())
+                list = item.split(num, 1)
+                list[0] += num
+                list.insert(1, '')
+            # Remove leading/trailing whitespace
+            list = [s.strip() for s in list]
         else:
-            # Search for integer in the item
-            num = (re.search(r'\d+', item).group())
-            list = item.split(num, 1)
-            list[0] += num
-        list = [s.replace('\xa0', ' ') for s in list]
-        list = [s.strip() for s in list]
-        print(list)
-    else:
-        list = ['', item]
-        print(list)
+            list = ['', '', item]
+        ingredient_list.append(list)
+    return ingredient_list
+
+scraped_ingred_quant = scraper(url)
+ingredient_list = cleanup(scraped_ingred_quant)
+
+print(ingredient_list)
