@@ -4,7 +4,7 @@ import unicodedata
 import requests
 import re
 
-url = "https://www.foodnetwork.com/recipes/guy-fieri/halibut-veracruz-recipe-1945441"
+url = "https://www.foodnetwork.com/recipes/food-network-kitchen/halal-cart-chicken-11312197"
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -55,18 +55,34 @@ def cleanup(scraped_ingred_quant):
             # and if string contains a unit of measurement
             if any(unit in item for unit in measurements):
                 # then split accordingly
+                x_unit = ''
                 for unit in measurements:
-                    if unit in item and item.index(unit) <= 5:
-                        list = item.split(unit, 1)
-                        if ' ' in list[0]:
-                            num_list = list[0].split(' ', 1)
-                            total = sum(float(Fraction(x)) for x in num_list)
-                            list[0] = str(total)
-                        list[0] += unit
+                    if unit in item:
+                        # If multiple units exist in one string, iterate with earlier unit
+                        # e.g. '5 tablespoons plus 3 ounces melted butter' <- Why do people do this?
+                        # Keep iterating until it earliest unit is found
+                        if item.index(unit) < item.index(x_unit) or item.index(x_unit) == 0:
+                            x_unit = unit
+                            list = item.split(x_unit, 1)
+                            try:
+                                # If ' ' exists, that means quantity is separated and requires addition
+                                # e.g. 1 1/2 cups, 2 2/5 teaspoons
+                                if ' ' in list[0]:
+                                    num_list = list[0].split(' ', 1)
+                                    total = sum(round(float(Fraction(x)), 2) for x in num_list)
+                                    list[0] = str(total)
+                                # Convert any fractions to floats
+                                elif '/' in list[0]:
+                                    list[0] = str(round(float(Fraction(list[0])), 2))
+                                list[0] += x_unit
+                            except ValueError:
+                                # ValueError occurs if multiple units exist in one string and algorithm iterates that later one
+                                # Not sure how else to work around this
+                                continue
             else:
                 # Else search for the first digit in the item
-                # and split accordingly
                 num = (re.search(r'\d+', item).group())
+                # and split accordingly
                 list = item.split(num, 1)
                 list[0] += num
             # Remove leading/trailing whitespace
