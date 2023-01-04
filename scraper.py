@@ -1,9 +1,10 @@
+from fractions import Fraction
+from bs4 import BeautifulSoup
+import unicodedata
 import requests
 import re
-import unicodedata
-from bs4 import BeautifulSoup
 
-url = "https://www.foodnetwork.com/recipes/rack-of-lamb-with-herb-crust-lamb-jus-and-rice-pilaf-5513373"
+url = "https://www.foodnetwork.com/recipes/guy-fieri/halibut-veracruz-recipe-1945441"
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -13,7 +14,7 @@ measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' m
 ' gallons ',' g ',' gal ',' gals ',' mg ',' milligram ',' milligrams ',' milligramme ',
 ' milligrammes ',' g ',' gs ',' gram ',' grams ',' gramme ',' grammes ',' kg ',' kgs ',
 ' kilogram ',' kilograms ',' kilogramme ',' kilogrammes ',' pound ',' pounds ',' lb ',' lbs ',
-' # ',' ounce ',' ounces ',' oz ', ' stick ', ' sticks ', ' clove ', ' cloves '])
+' # ',' ounce ',' ounces ',' oz ', ' stick ', ' sticks '])
 numdict = {
     "One" : 1,
     "Two" : 2,
@@ -55,24 +56,28 @@ def cleanup(scraped_ingred_quant):
             if any(unit in item for unit in measurements):
                 # then split accordingly
                 for unit in measurements:
-                    if unit in item:
+                    if unit in item and item.index(unit) <= 5:
                         list = item.split(unit, 1)
-                        list.insert(1, unit)
+                        if ' ' in list[0]:
+                            num_list = list[0].split(' ', 1)
+                            total = sum(float(Fraction(x)) for x in num_list)
+                            list[0] = str(total)
+                        list[0] += unit
             else:
                 # Else search for the first digit in the item
                 # and split accordingly
                 num = (re.search(r'\d+', item).group())
                 list = item.split(num, 1)
                 list[0] += num
-                list.insert(1, '')
             # Remove leading/trailing whitespace
             list = [s.strip() for s in list]
         else:
-            list = ['', '', item]
+            list = ['', item]
         ingredient_list.append(list)
     return ingredient_list
 
 scraped_ingred_quant = scraper(url)
 ingredient_list = cleanup(scraped_ingred_quant)
 
-print(ingredient_list)
+if __name__ == "__main__":
+    print(ingredient_list)
