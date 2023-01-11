@@ -20,75 +20,40 @@ try:
 except:
     print("Database failed to connect.")
 
-# Create recipe and ingredient tables
-tables = ['recipe_table','ingredient_table']
-for table_name in tables:
-    try:
-        cur = conn.cursor()
+cur = conn.cursor()
 
-        cur.execute(f"""
-            CREATE TABLE {table_name} (
-                id SERIAL PRIMARY KEY NOT NULL,
-                "name" VARCHAR
-            );
-            """)
-        print(f"Table {table_name} created successfully.")
-    except psycopg2.errors.DuplicateTable:
-        print(f"Table {table_name} already exists.")
-    conn.commit()  # Commit the change
-
-# Create quantity table
-quantity_table = 'quantity_table'
+# Create recipe_table
+recipe_table = 'recipe_table'
 try:
     cur.execute(f"""
-        CREATE TABLE {quantity_table} (
-            recipe_id INT,
-            ingredient_id INT,
+        CREATE TABLE {recipe_table} (
+            recipe VARCHAR,
+            ingredient VARCHAR,
             quantity VARCHAR,
             unit VARCHAR
         );
         """)
-    print(f"Table {quantity_table} created successfully.")
+    print(f"Table {recipe_table} created successfully.")
 except psycopg2.errors.DuplicateTable:
-    print(f"Table {quantity_table} already exists.")
+    print(f"Table {recipe_table} already exists.")
 conn.commit()  # Commit the change
 
 def insert():
-    cur.execute(f"""
-            INSERT INTO recipe_table (
-                "name"
-            )
-            VALUES (
-                '{recipe_name}'
-            );
-            """)
-    conn.commit()
-
     for list in ingredient_list:
         quantity = list[0]
         unit = list[1]
         ingredient = list[2]
-    
-        cur.execute(f"""
-            INSERT INTO ingredient_table (
-                "name"
-            )
-            VALUES (
-                '{ingredient}'
-            );
-            """)
-        conn.commit()
 
         cur.execute(f"""
-            INSERT INTO quantity_table (
-                recipe_id,
-                ingredient_id,
+            INSERT INTO recipe_table (
+                recipe,
+                ingredient,
                 quantity,
                 unit
             )
             VALUES (
-                (SELECT id FROM recipe_table),
-                (SELECT id FROM ingredient_table),
+                '{recipe_name}',
+                '{ingredient}',
                 '{quantity}',
                 '{unit}'
             );
@@ -96,3 +61,6 @@ def insert():
         conn.commit()
 
 table = insert()
+
+cur.close()
+conn.close()

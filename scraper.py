@@ -4,7 +4,7 @@ import unicodedata
 import requests
 import re
 
-url = "https://www.foodnetwork.com/recipes/food-network-kitchen/halal-cart-chicken-11312197"
+url = "https://www.foodnetwork.com/recipes/food-network-kitchen/avocado-pie-recipe-1973054"
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -90,10 +90,11 @@ def cleanup(scraped_ingred_quant):
                 list = item.split(num, 1)
                 list[0] += num
                 list.insert(1, '')
-            # Remove leading/trailing whitespace
-            list = [s.strip() for s in list]
         else:
             list = ['', '', item]
+        # Remove leading/trailing whitespace and quotes in string
+        list = [s.strip() for s in list]
+        list = [s.replace("'","") for s in list]
         ingredient_list.append(list)
     return ingredient_list
 
