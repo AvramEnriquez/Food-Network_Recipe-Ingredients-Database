@@ -1,3 +1,4 @@
+from url_locator import all_recipe_urls
 from fractions import Fraction
 from bs4 import BeautifulSoup
 import unicodedata
