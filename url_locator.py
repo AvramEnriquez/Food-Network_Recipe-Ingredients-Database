@@ -7,10 +7,12 @@ from selenium.common.exceptions import ElementClickInterceptedException
 
 path = "/Applications/chromedriver.exe"
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+url = "https://www.foodnetwork.com/recipes/recipes-a-z/123"
 
 def locate_url():
-    driver.get("https://www.foodnetwork.com/recipes/recipes-a-z/123")
-    
+    driver.get(url)
+    all_recipe_urls = []
+
     # get number of elements to click on
     letter_count = 0 
     letters_len = len(driver.find_elements(By.CLASS_NAME, "o-IndexPagination__a-Button "))
@@ -27,7 +29,6 @@ def locate_url():
         while True:
             try:
                 # Find recipe URLs on each page
-                all_recipe_urls = []
                 recipe = driver.find_elements(By.CLASS_NAME, "m-PromoList__a-ListItem")
                 recipe_url = [s.find_element(By.TAG_NAME, 'a').get_attribute('href') for s in recipe]
                 
