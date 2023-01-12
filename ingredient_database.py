@@ -1,4 +1,4 @@
-from scraper import ingredient_list, recipe_name
+from scraper import name_and_ingredients
 import psycopg2
 
 """CONNECTING TO DATABASE"""
@@ -39,26 +39,28 @@ except psycopg2.errors.DuplicateTable:
 conn.commit()  # Commit the change
 
 def insert():
-    for list in ingredient_list:
-        quantity = list[0]
-        unit = list[1]
-        ingredient = list[2]
+    for tuple in name_and_ingredients:
+        recipe_name = tuple[0]
+        for list in tuple[1]:
+            quantity = list[0]
+            unit = list[1]
+            ingredient = list[2]
 
-        cur.execute(f"""
-            INSERT INTO recipe_table (
-                recipe,
-                ingredient,
-                quantity,
-                unit
-            )
-            VALUES (
-                '{recipe_name}',
-                '{ingredient}',
-                '{quantity}',
-                '{unit}'
-            );
-            """)
-        conn.commit()
+            cur.execute(f"""
+                INSERT INTO recipe_table (
+                    recipe,
+                    ingredient,
+                    quantity,
+                    unit
+                )
+                VALUES (
+                    '{recipe_name}',
+                    '{ingredient}',
+                    '{quantity}',
+                    '{unit}'
+                );
+                """)
+            conn.commit()
 
 table = insert()
 

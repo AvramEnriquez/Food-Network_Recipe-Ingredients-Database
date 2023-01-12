@@ -13,7 +13,7 @@ def locate_url():
     driver.get(url)
     all_recipe_urls = []
 
-    # get number of elements to click on
+    # Get number of elements to click on
     letter_count = 0 
     letters_len = len(driver.find_elements(By.CLASS_NAME, "o-IndexPagination__a-Button "))
 
@@ -32,21 +32,21 @@ def locate_url():
                 recipe = driver.find_elements(By.CLASS_NAME, "m-PromoList__a-ListItem")
                 recipe_url = [s.find_element(By.TAG_NAME, 'a').get_attribute('href') for s in recipe]
                 
-                all_recipe_urls += recipe_url
+                # Add to URLs list
+                all_recipe_urls.extend(recipe_url)
 
                 # Click "Next" button
                 page = driver.find_element(By.XPATH, "//*[contains(@class, 'o-Pagination__a-NextButton')]")
                 page.click()
 
                 time.sleep(1)
+            # Once error occurs ("Next" can no longer be clicked), break loop
             except ElementClickInterceptedException:
                 break
 
         letter_count += 1
 
     driver.quit()
-
-    return all_recipe_urls
 
 all_recipe_urls = locate_url()
 

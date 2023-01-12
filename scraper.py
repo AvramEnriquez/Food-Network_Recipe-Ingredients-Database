@@ -1,11 +1,11 @@
-from url_locator import all_recipe_urls
+# from url_locator import all_recipe_urls
 from fractions import Fraction
 from bs4 import BeautifulSoup
 import unicodedata
 import requests
 import re
 
-url = "https://www.foodnetwork.com/recipes/food-network-kitchen/avocado-pie-recipe-1973054"
+urls = ["https://www.foodnetwork.com/recipes/food-network-kitchen/avocado-pie-recipe-1973054", "https://www.foodnetwork.com/recipes/food-network-kitchen/7-layer-pasta-salad-recipe-2043072"]
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -89,7 +89,7 @@ def cleanup(scraped_ingred_quant):
                 num = (re.search(r'\d+', item).group())
                 # and split accordingly
                 list = item.split(num, 1)
-                list[0] += num
+                list[0] = num
                 list.insert(1, '')
         else:
             list = ['', '', item]
@@ -99,9 +99,16 @@ def cleanup(scraped_ingred_quant):
         ingredient_list.append(list)
     return ingredient_list
 
-recipe_name = scraper(url)[0]
-scraped_ingred_quant = scraper(url)[1]
-ingredient_list = cleanup(scraped_ingred_quant)
+def url_cycler():
+    # Cycle through URls and create a list of tuples
+    # Each tuple contains (recipe name, [list of ingredients]) 
+    for url in urls:
+        recipe_name = scraper(url)[0]
+        scraped_ingred_quant = scraper(url)[1]
+        ingredient_list = cleanup(scraped_ingred_quant)
+        yield recipe_name, ingredient_list
+
+name_and_ingredients = url_cycler()
 
 if __name__ == "__main__":
-    print(recipe_name, ingredient_list)
+    print(list(name_and_ingredients))
