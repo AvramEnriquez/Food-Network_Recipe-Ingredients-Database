@@ -31,7 +31,7 @@ def locate_url():
                 # Find recipe URLs on each page
                 recipe = driver.find_elements(By.CLASS_NAME, "m-PromoList__a-ListItem")
                 recipe_url = [s.find_element(By.TAG_NAME, 'a').get_attribute('href') for s in recipe]
-                
+                print(recipe_url)
                 # Add to URLs list
                 all_recipe_urls.extend(recipe_url)
 
@@ -47,8 +47,11 @@ def locate_url():
         letter_count += 1
 
     driver.quit()
+    
+    return all_recipe_urls
 
 all_recipe_urls = locate_url()
 
 if __name__ == "__main__":
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
     print(all_recipe_urls)

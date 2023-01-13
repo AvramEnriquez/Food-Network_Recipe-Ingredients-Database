@@ -1,11 +1,11 @@
-# from url_locator import all_recipe_urls
+# from url_locator import all_recipe_urls as urls
 from fractions import Fraction
 from bs4 import BeautifulSoup
 import unicodedata
 import requests
 import re
 
-urls = ["https://www.foodnetwork.com/recipes/food-network-kitchen/avocado-pie-recipe-1973054", "https://www.foodnetwork.com/recipes/food-network-kitchen/7-layer-pasta-salad-recipe-2043072"]
+urls = ['https://www.foodnetwork.com/recipes/apple-studded-brown-butter-streusel-coffee-cake-2124530']
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -38,6 +38,7 @@ def scraper(url):
     scraped_recipe_name = soup.find("meta", {"property" : "og:title"})
     # Item content contains name
     recipe_name = scraped_recipe_name["content"]
+    recipe_name = recipe_name.replace("'","")
 
     # Look for Food Network's ingredients checklist by looking for input elements that contain the following conditions 
     shopping_list = soup.find_all("input", {"class" : "o-Ingredients__a-Ingredient--Checkbox"}, {"type" : "checkbox"})
@@ -62,7 +63,7 @@ def cleanup(scraped_ingred_quant):
                 # then split accordingly
                 x_unit = ''
                 for unit in measurements:
-                    if unit in item:
+                    if unit in item and item.index(unit) <= 5:
                         # If multiple units exist in one string, iterate with earlier unit
                         # e.g. '5 tablespoons plus 3 ounces melted butter' <- Why do people do this?
                         # Keep iterating until earliest unit is found
@@ -84,12 +85,25 @@ def cleanup(scraped_ingred_quant):
                                 # ValueError occurs if multiple units exist in one string and algorithm iterates the later one
                                 # Not sure how else to work around this
                                 continue
+                    elif unit in item and item.index(unit) > 5:
+                        # Else search for the first digit in the item
+                        num = (re.search(r'\d+', item).group())
+                        # If '/' exists, e.g. 1/2 onion
+                        if '/' in item and item.index('/') <= 5:
+                            num = num + item[item.index(num) + 1] + item[item.index(num) + 2]
+                        # and split accordingly
+                        list = item.split(num, 1)
+                        list[0] = str(round(float(Fraction(num)), 2))
+                        list.insert(1, '')
             else:
                 # Else search for the first digit in the item
                 num = (re.search(r'\d+', item).group())
+                # If '/' exists, e.g. 1/2 onion
+                if '/' in item and item.index('/') <= 5:
+                    num = num + item[item.index(num) + 1] + item[item.index(num) + 2]
                 # and split accordingly
                 list = item.split(num, 1)
-                list[0] = num
+                list[0] = str(round(float(Fraction(num)), 2))
                 list.insert(1, '')
         else:
             list = ['', '', item]
@@ -103,10 +117,14 @@ def url_cycler():
     # Cycle through URls and create a list of tuples
     # Each tuple contains (recipe name, [list of ingredients]) 
     for url in urls:
-        recipe_name = scraper(url)[0]
-        scraped_ingred_quant = scraper(url)[1]
-        ingredient_list = cleanup(scraped_ingred_quant)
-        yield recipe_name, ingredient_list
+        try:
+            recipe_name = scraper(url)[0]
+            scraped_ingred_quant = scraper(url)[1]
+            ingredient_list = cleanup(scraped_ingred_quant)
+            yield recipe_name, ingredient_list
+        # If error, continue. Running into URLs with NoneType
+        except:
+            continue
 
 name_and_ingredients = url_cycler()
 
