@@ -1,11 +1,9 @@
-# from url_locator import all_recipe_urls as urls
+from url_database import url_list as urls
 from fractions import Fraction
 from bs4 import BeautifulSoup
 import unicodedata
 import requests
 import re
-
-urls = ['https://www.foodnetwork.com/recipes/apple-studded-brown-butter-streusel-coffee-cake-2124530']
 
 measurements = ([' ml ',' mL ',' milliliter ',' milliliters ',' millilitre ',' millilitres ',
 ' cc ',' l ',' L ',' liter ',' liters ',' litre ',' litres ',' teaspoon ',' teaspoons ',
@@ -113,20 +111,25 @@ def cleanup(scraped_ingred_quant):
         ingredient_list.append(list)
     return ingredient_list
 
-def url_cycler():
+def url_cycler(urls):
     # Cycle through URls and create a list of tuples
     # Each tuple contains (recipe name, [list of ingredients]) 
     for url in urls:
-        try:
-            recipe_name = scraper(url)[0]
-            scraped_ingred_quant = scraper(url)[1]
-            ingredient_list = cleanup(scraped_ingred_quant)
-            yield recipe_name, ingredient_list
-        # If error, continue. Running into URLs with NoneType
-        except:
-            continue
+        recipe_name = scraper(url)[0]
+        raw_ingred_quant = scraper(url)[1]
+        
+        ingredient_list = cleanup(raw_ingred_quant)
+        yield recipe_name, ingredient_list
 
-name_and_ingredients = url_cycler()
+name_and_ingredients = url_cycler(urls)
+# Convert generator to list
+name_and_ingredients = list(name_and_ingredients)
+
+# Remove any duplicates using dict by making keys out of recipe names since keys are unique
+unique_name_and_ingredients = []
+for name in dict(unique_name_and_ingredients).keys():
+    # 'next' function to iterate through all duplicate ingredient lists until last one
+    unique_name_and_ingredients += [(name, next(y for x, y in unique_name_and_ingredients if x == name))]
 
 if __name__ == "__main__":
-    print(list(name_and_ingredients))
+    print(unique_name_and_ingredients)

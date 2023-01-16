@@ -1,4 +1,4 @@
-from scraper import name_and_ingredients
+from scraper import unique_name_and_ingredients
 import psycopg2
 
 """CONNECTING TO DATABASE"""
@@ -39,7 +39,7 @@ except psycopg2.errors.DuplicateTable:
 conn.commit()  # Commit the change
 
 def insert():
-    for tuple in name_and_ingredients:
+    for tuple in unique_name_and_ingredients:
         recipe_name = tuple[0]
         for list in tuple[1]:
             quantity = list[0]
