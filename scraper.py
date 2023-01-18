@@ -49,53 +49,57 @@ def cleanup(scraped_ingred_quant):
     ingredient_list = []
     list = []
     for item in scraped_ingred_quant:
-        # Cleanup HTML encoding '\xa0'
-        item = unicodedata.normalize('NFKD', item)
-        # 'One' -> '1', 'Two' -> '2', 'Three' -> '3'
-        for key, value in numdict.items():
-            if key in item:
-                item = item.replace(key, str(value))
-        # If string contains a digit
-        if any(char.isdigit() for char in item):
-            # and if string contains a unit of measurement
-            if any(unit in item for unit in measurements):
-                # then split accordingly
-                x_unit = ''
-                for unit in measurements:
-                    if unit in item and item.index(unit) <= 7:
-                        if '-' in item and item.index('-') < item.index(unit):
+        try:
+            # Cleanup HTML encoding '\xa0'
+            item = unicodedata.normalize('NFKD', item)
+            # 'One' -> '1', 'Two' -> '2', 'Three' -> '3'
+            for key, value in numdict.items():
+                if key in item:
+                    item = item.replace(key, str(value))
+            # If string contains a digit
+            if any(char.isdigit() for char in item):
+                # and if string contains a unit of measurement
+                if any(unit in item for unit in measurements):
+                    # then split accordingly
+                    x_unit = ''
+                    for unit in measurements:
+                        if unit in item and item.index(unit) <= 7:
+                            if '-' in item and item.index('-') < item.index(unit):
+                                list = number_no_unit(item, list)
+                            # If multiple units exist in one string, iterate with earlier unit
+                            # e.g. '5 tablespoons plus 3 ounces melted butter' <- Why do people do this?
+                            # Keep iterating until earliest unit is found
+                            elif item.index(unit) < item.index(x_unit) or item.index(x_unit) == 0:
+                                x_unit = unit
+                                list = item.split(x_unit, 1)
+                                try:
+                                    # If ' ' exists, that means quantity is separated and requires addition
+                                    # e.g. 1 1/2 cups, 2 2/5 teaspoons
+                                    if ' ' in list[0]:
+                                        num_list = list[0].split(' ', 1)
+                                        total = sum(round(float(Fraction(x)), 2) for x in num_list)
+                                        list[0] = str(total)
+                                    # Convert any fractions to floats
+                                    elif '/' in list[0]:
+                                        list[0] = str(round(float(Fraction(list[0])), 2))
+                                    list.insert(1, x_unit)
+                                except ValueError:
+                                    # ValueError occurs if multiple units exist in one string and algorithm iterates the later one
+                                    # Not sure how else to work around this
+                                    continue
+                        elif unit in item and item.index(unit) > 7:
                             list = number_no_unit(item, list)
-                        # If multiple units exist in one string, iterate with earlier unit
-                        # e.g. '5 tablespoons plus 3 ounces melted butter' <- Why do people do this?
-                        # Keep iterating until earliest unit is found
-                        elif item.index(unit) < item.index(x_unit) or item.index(x_unit) == 0:
-                            x_unit = unit
-                            list = item.split(x_unit, 1)
-                            try:
-                                # If ' ' exists, that means quantity is separated and requires addition
-                                # e.g. 1 1/2 cups, 2 2/5 teaspoons
-                                if ' ' in list[0]:
-                                    num_list = list[0].split(' ', 1)
-                                    total = sum(round(float(Fraction(x)), 2) for x in num_list)
-                                    list[0] = str(total)
-                                # Convert any fractions to floats
-                                elif '/' in list[0]:
-                                    list[0] = str(round(float(Fraction(list[0])), 2))
-                                list.insert(1, x_unit)
-                            except ValueError:
-                                # ValueError occurs if multiple units exist in one string and algorithm iterates the later one
-                                # Not sure how else to work around this
-                                continue
-                    elif unit in item and item.index(unit) > 7:
-                        list = number_no_unit(item, list)
+                else:
+                    list = number_no_unit(item, list)
             else:
-                list = number_no_unit(item, list)
-        else:
-            list = ['', '', item]
-        # Remove leading/trailing whitespace and quotes in string
-        list = [s.strip() for s in list]
-        list = [s.replace("'","") for s in list]
-        ingredient_list.append(list)
+                list = ['', '', item]
+            # Remove leading/trailing whitespace and quotes in string
+            list = [s.strip() for s in list]
+            list = [s.replace("'","") for s in list]
+            ingredient_list.append(list)
+        except:
+            # If error (ValueError specifically), continue
+            continue
     return ingredient_list
 
 def number_no_unit(item, list):
