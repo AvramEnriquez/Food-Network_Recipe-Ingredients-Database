@@ -42,25 +42,29 @@ def insert():
     for tuple in unique_name_and_ingredients:
         recipe_name = tuple[0]
         for list in tuple[1]:
-            quantity = list[0]
-            unit = list[1]
-            ingredient = list[2]
+            try:
+                quantity = list[0]
+                unit = list[1]
+                ingredient = list[2]
 
-            cur.execute(f"""
-                INSERT INTO recipe_table (
-                    recipe,
-                    ingredient,
-                    quantity,
-                    unit
-                )
-                VALUES (
-                    '{recipe_name}',
-                    '{ingredient}',
-                    '{quantity}',
-                    '{unit}'
-                );
-                """)
-            conn.commit()
+                cur.execute(f"""
+                    INSERT INTO recipe_table (
+                        recipe,
+                        ingredient,
+                        quantity,
+                        unit
+                    )
+                    VALUES (
+                        '{recipe_name}',
+                        '{ingredient}',
+                        '{quantity}',
+                        '{unit}'
+                    );
+                    """)
+                conn.commit()
+            except:
+                print(tuple)
+                continue
 
 table = insert()
 

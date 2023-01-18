@@ -47,6 +47,7 @@ def scraper(url):
 
 def cleanup(scraped_ingred_quant):
     ingredient_list = []
+    list = []
     for item in scraped_ingred_quant:
         # Cleanup HTML encoding '\xa0'
         item = unicodedata.normalize('NFKD', item)
@@ -61,11 +62,13 @@ def cleanup(scraped_ingred_quant):
                 # then split accordingly
                 x_unit = ''
                 for unit in measurements:
-                    if unit in item and item.index(unit) <= 5:
+                    if unit in item and item.index(unit) <= 7:
+                        if '-' in item and item.index('-') < item.index(unit):
+                            list = number_no_unit(item, list)
                         # If multiple units exist in one string, iterate with earlier unit
                         # e.g. '5 tablespoons plus 3 ounces melted butter' <- Why do people do this?
                         # Keep iterating until earliest unit is found
-                        if item.index(unit) < item.index(x_unit) or item.index(x_unit) == 0:
+                        elif item.index(unit) < item.index(x_unit) or item.index(x_unit) == 0:
                             x_unit = unit
                             list = item.split(x_unit, 1)
                             try:
@@ -83,26 +86,10 @@ def cleanup(scraped_ingred_quant):
                                 # ValueError occurs if multiple units exist in one string and algorithm iterates the later one
                                 # Not sure how else to work around this
                                 continue
-                    elif unit in item and item.index(unit) > 5:
-                        # Else search for the first digit in the item
-                        num = (re.search(r'\d+', item).group())
-                        # If '/' exists, e.g. 1/2 onion
-                        if '/' in item and item.index('/') <= 5:
-                            num = num + item[item.index(num) + 1] + item[item.index(num) + 2]
-                        # and split accordingly
-                        list = item.split(num, 1)
-                        list[0] = str(round(float(Fraction(num)), 2))
-                        list.insert(1, '')
+                    elif unit in item and item.index(unit) > 7:
+                        list = number_no_unit(item, list)
             else:
-                # Else search for the first digit in the item
-                num = (re.search(r'\d+', item).group())
-                # If '/' exists, e.g. 1/2 onion
-                if '/' in item and item.index('/') <= 5:
-                    num = num + item[item.index(num) + 1] + item[item.index(num) + 2]
-                # and split accordingly
-                list = item.split(num, 1)
-                list[0] = str(round(float(Fraction(num)), 2))
-                list.insert(1, '')
+                list = number_no_unit(item, list)
         else:
             list = ['', '', item]
         # Remove leading/trailing whitespace and quotes in string
@@ -110,6 +97,31 @@ def cleanup(scraped_ingred_quant):
         list = [s.replace("'","") for s in list]
         ingredient_list.append(list)
     return ingredient_list
+
+def number_no_unit(item, list):
+    # Search for the first digit in the item
+    num = (re.search(r'\d+', item).group())
+    # If '/' exists, e.g. 1/2 onion
+    # Combine x/y to get fraction, assumes no fraction of x/yy
+    if '/' in item and item.index('/') <= 4:
+        if '(' in item and item.index(num) < item.index('('):
+            num = (re.search(r'\d+', item).group())
+        else:
+            num = item[item.index(num):item.index('/') + 2]
+        if ' ' in num and item.index(' ') < item.index('/'):
+            num_list = num.split(' ', 1)
+            total = sum(round(float(Fraction(x)), 2) for x in num_list)
+            num = str(total)
+        if '-' in num and item.index('-') < item.index('/'):
+            num_list = num.split('-', 1)
+            total = sum(round(float(Fraction(x)), 2) for x in num_list)
+            num = str(total)
+    # and split accordingly
+    list = item.split(num, 1)
+    list[0] = str(round(float(Fraction(num)), 2))
+    list.insert(1, '')
+
+    return list
 
 def url_cycler(urls):
     # Cycle through URls and create a list of tuples
@@ -127,9 +139,9 @@ name_and_ingredients = list(name_and_ingredients)
 
 # Remove any duplicates using dict by making keys out of recipe names since keys are unique
 unique_name_and_ingredients = []
-for name in dict(unique_name_and_ingredients).keys():
+for name in dict(name_and_ingredients).keys():
     # 'next' function to iterate through all duplicate ingredient lists until last one
-    unique_name_and_ingredients += [(name, next(y for x, y in unique_name_and_ingredients if x == name))]
+    unique_name_and_ingredients += [(name, next(y for x, y in name_and_ingredients if x == name))]
 
 if __name__ == "__main__":
     print(unique_name_and_ingredients)
